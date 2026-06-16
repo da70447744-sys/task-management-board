@@ -3,7 +3,6 @@ import { useTaskStore } from "./src/taskStore";
 
 describe("taskStore", () => {
   beforeEach(() => {
-    // Keep actions intact and reset only the tasks slice.
     useTaskStore.setState({ tasks: [] });
   });
 

@@ -19,9 +19,17 @@ import { create } from "zustand";
  * @property {(id: string, nextStatus: TaskStatus) => void} moveTask
  */
 
+/** @type {Task[]} */
+export const INITIAL_TASKS = [
+  { id: "ent-001", title: "Optimize Database Indexing", status: "todo" },
+  { id: "ent-002", title: "Implement JWT Authentication Flow", status: "todo" },
+  { id: "ent-003", title: "Integrate Stripe Payment Gateway", status: "in-progress" },
+  { id: "ent-004", title: "Setup GitHub Actions CI/CD Pipeline", status: "in-progress" },
+  { id: "ent-005", title: "Configure Redis Caching Layer", status: "done" },
+  { id: "ent-006", title: "Refactor REST API to GraphQL", status: "done" },
+];
+
 /**
- * Simple ID generator that is fast and collision-resistant enough
- * for client-side task creation in a local board.
  * @returns {string}
  */
 const makeTaskId = () => {
@@ -36,7 +44,7 @@ const DEFAULT_STATUS = "todo";
 
 /** @type {TaskStore} */
 export const useTaskStore = create((set) => ({
-  tasks: [],
+  tasks: INITIAL_TASKS,
 
   addTask: (title, status = DEFAULT_STATUS) => {
     const trimmedTitle = title.trim();

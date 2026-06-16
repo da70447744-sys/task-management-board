@@ -3,72 +3,116 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useTaskStore } from "./taskStore";
 
 const COLUMNS = [
-  { key: "todo", title: "To Do", tone: "from-sky-500/20 to-sky-400/5 ring-sky-500/30" },
+  {
+    key: "todo",
+    title: "Backlog",
+    subtitle: "Queued for sprint",
+    accent: "border-sky-500/40 bg-sky-500/5",
+    badge: "bg-sky-500/15 text-sky-300 ring-sky-500/30",
+    dot: "bg-sky-400",
+  },
   {
     key: "in-progress",
     title: "In Progress",
-    tone: "from-amber-500/20 to-amber-400/5 ring-amber-500/30",
+    subtitle: "Active development",
+    accent: "border-amber-500/40 bg-amber-500/5",
+    badge: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+    dot: "bg-amber-400",
   },
-  { key: "done", title: "Done", tone: "from-emerald-500/20 to-emerald-400/5 ring-emerald-500/30" },
+  {
+    key: "done",
+    title: "Shipped",
+    subtitle: "Deployed to production",
+    accent: "border-emerald-500/40 bg-emerald-500/5",
+    badge: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+    dot: "bg-emerald-400",
+  },
 ];
 
 const cardVariants = {
-  initial: { opacity: 0, y: 14, scale: 0.97 },
+  initial: { opacity: 0, y: 16, scale: 0.96 },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 500, damping: 32, mass: 0.9 },
+    transition: { type: "spring", stiffness: 420, damping: 28 },
   },
-  exit: { opacity: 0, scale: 0.85, transition: { duration: 0.18, ease: "easeOut" } },
+  exit: {
+    opacity: 0,
+    scale: 0.88,
+    transition: { duration: 0.2, ease: "easeOut" },
+  },
 };
 
-function TaskCard({ task, onDelete, onMoveLeft, onMoveRight, canMoveLeft, canMoveRight }) {
+function TaskCard({ task, isDragging, onDragStart, onDragEnd, onDelete }) {
   return (
     <motion.li
       layout
+      layoutId={task.id}
+      draggable
+      onDragStart={(event) => onDragStart(event, task.id)}
+      onDragEnd={onDragEnd}
       variants={cardVariants}
       initial="initial"
-      animate="animate"
+      animate={
+        isDragging
+          ? { rotate: 2.5, scale: 1.03, opacity: 0.92, y: -2 }
+          : { rotate: 0, scale: 1, opacity: 1, y: 0 }
+      }
       exit="exit"
-      whileHover={{ y: -2, scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      className="group rounded-xl border border-white/10 bg-zinc-900/90 p-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.7)] backdrop-blur"
+      whileHover={{
+        y: -5,
+        boxShadow: "0px 12px 24px rgba(0,0,0,0.06)",
+      }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      className="group cursor-grab rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm active:cursor-grabbing"
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="pr-2 text-sm font-medium text-zinc-100">{task.title}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+            <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              ENG-{task.id.slice(-3).toUpperCase()}
+            </span>
+          </div>
+          <p className="text-sm font-semibold leading-snug text-slate-800">{task.title}</p>
+        </div>
         <button
           type="button"
           onClick={() => onDelete(task.id)}
-          className="rounded-md p-1.5 text-zinc-500 transition hover:bg-red-500/15 hover:text-red-300"
+          className="rounded-lg p-1.5 text-slate-400 opacity-0 transition hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
           aria-label={`Delete ${task.title}`}
           title="Delete task"
         >
-          ✕
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onMoveLeft(task.id)}
-            disabled={!canMoveLeft}
-            className="rounded-md border border-white/10 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 transition hover:border-white/20 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-35"
-          >
-            ← Move
-          </button>
-          <button
-            type="button"
-            onClick={() => onMoveRight(task.id)}
-            disabled={!canMoveRight}
-            className="rounded-md border border-white/10 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 transition hover:border-white/20 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-35"
-          >
-            Move →
-          </button>
+      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+        <span className="text-xs text-slate-400">Drag to reassign</span>
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[10px] font-bold text-white">
+          {task.title.charAt(0)}
         </div>
       </div>
     </motion.li>
+  );
+}
+
+function StatCard({ label, value, trend }) {
+  return (
+    <motion.div
+      layout
+      className="rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow-sm backdrop-blur"
+      whileHover={{ y: -2 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+    >
+      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-400">{trend}</p>
+    </motion.div>
   );
 }
 
@@ -79,6 +123,8 @@ export default function Board() {
   const moveTask = useTaskStore((state) => state.moveTask);
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverColumn, setDragOverColumn] = useState(null);
 
   const groupedTasks = useMemo(
     () => ({
@@ -87,6 +133,16 @@ export default function Board() {
       done: tasks.filter((task) => task.status === "done"),
     }),
     [tasks]
+  );
+
+  const stats = useMemo(
+    () => ({
+      total: tasks.length,
+      inProgress: groupedTasks["in-progress"].length,
+      shipped: groupedTasks.done.length,
+      backlog: groupedTasks.todo.length,
+    }),
+    [tasks, groupedTasks]
   );
 
   const onCreateTask = () => {
@@ -102,91 +158,187 @@ export default function Board() {
     }
   };
 
-  const moveLeftMap = {
-    "in-progress": "todo",
-    done: "in-progress",
+  const handleDragStart = (event, taskId) => {
+    event.dataTransfer.setData("text/plain", taskId);
+    event.dataTransfer.effectAllowed = "move";
+    setDraggingId(taskId);
   };
 
-  const moveRightMap = {
-    todo: "in-progress",
-    "in-progress": "done",
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setDragOverColumn(null);
+  };
+
+  const handleDragOver = (event, columnKey) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverColumn(columnKey);
+  };
+
+  const handleDrop = (event, columnKey) => {
+    event.preventDefault();
+    const taskId = event.dataTransfer.getData("text/plain");
+    if (taskId) {
+      moveTask(taskId, columnKey);
+    }
+    setDraggingId(null);
+    setDragOverColumn(null);
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#1f2937_0%,_#09090b_45%)] px-4 py-8 text-zinc-100 md:px-8">
-      <div className="mx-auto w-full max-w-7xl">
-        <div className="mb-8 flex items-end justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white">Task Board</h1>
-            <p className="mt-1 text-sm text-zinc-400">
-              Manage priorities with smooth drag-like transitions and quick actions.
-            </p>
+    <div className="min-h-screen bg-[linear-gradient(160deg,_#f8fafc_0%,_#eef2ff_45%,_#f1f5f9_100%)]">
+      <div className="mx-auto flex min-h-screen max-w-[1440px]">
+        <aside className="hidden w-64 shrink-0 border-r border-slate-200/80 bg-white/60 p-6 backdrop-blur-xl lg:block">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-sm font-bold text-white shadow-lg shadow-indigo-500/25">
+              PM
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">NexusFlow</p>
+              <p className="text-xs text-slate-500">Enterprise Suite</p>
+            </div>
           </div>
-          <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
-            {tasks.length} total task{tasks.length === 1 ? "" : "s"}
-          </div>
-        </div>
 
-        <motion.div
-          layout
-          className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
-          transition={{ type: "spring", stiffness: 200, damping: 24 }}
-        >
-          {COLUMNS.map((column) => {
-            const columnTasks = groupedTasks[column.key];
-
-            return (
-              <motion.section
-                layout
-                key={column.key}
-                className={`rounded-2xl border border-white/10 bg-gradient-to-br ${column.tone} p-4 shadow-[0_25px_70px_-45px_rgba(0,0,0,0.85)] backdrop-blur`}
+          <nav className="space-y-1">
+            {["Dashboard", "Sprint Board", "Roadmap", "Analytics"].map((item, index) => (
+              <div
+                key={item}
+                className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                  index === 1
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                }`}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-white">{column.title}</h2>
-                  <span className="rounded-full bg-black/30 px-2.5 py-1 text-xs text-zinc-200 ring-1 ring-white/10">
-                    {columnTasks.length}
-                  </span>
-                </div>
+                {item}
+              </div>
+            ))}
+          </nav>
+        </aside>
 
-                {column.key === "todo" && (
-                  <div className="mb-4 flex gap-2">
-                    <input
-                      value={newTaskTitle}
-                      onChange={(event) => setNewTaskTitle(event.target.value)}
-                      onKeyDown={handleTitleKeyDown}
-                      placeholder="Add a new task..."
-                      className="w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none ring-0 placeholder:text-zinc-500 transition focus:border-sky-400/60 focus:shadow-[0_0_0_4px_rgba(56,189,248,0.15)]"
-                    />
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.96 }}
-                      onClick={onCreateTask}
-                      className="rounded-xl bg-sky-500 px-3 py-2 text-sm font-medium text-sky-950 transition hover:bg-sky-400"
-                    >
-                      Add
-                    </motion.button>
-                  </div>
-                )}
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <header className="mb-8">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">
+                  Engineering · Sprint 24
+                </p>
+                <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+                  Project Management Dashboard
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                  Orchestrate enterprise delivery workflows with real-time board visibility and
+                  drag-and-drop task routing.
+                </p>
+              </div>
+              <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 shadow-sm">
+                Last synced · just now
+              </div>
+            </div>
 
-                <motion.ul layout className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {columnTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onDelete={deleteTask}
-                        onMoveLeft={(id) => moveTask(id, moveLeftMap[column.key])}
-                        onMoveRight={(id) => moveTask(id, moveRightMap[column.key])}
-                        canMoveLeft={Boolean(moveLeftMap[column.key])}
-                        canMoveRight={Boolean(moveRightMap[column.key])}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.ul>
-              </motion.section>
-            );
-          })}
-        </motion.div>
+            <motion.div
+              layout
+              className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4"
+              transition={{ type: "spring", stiffness: 200, damping: 24 }}
+            >
+              <StatCard label="Total Initiatives" value={stats.total} trend="Across all lanes" />
+              <StatCard label="Backlog" value={stats.backlog} trend="Awaiting assignment" />
+              <StatCard label="In Progress" value={stats.inProgress} trend="Active engineering" />
+              <StatCard label="Shipped" value={stats.shipped} trend="Production ready" />
+            </motion.div>
+          </header>
+
+          <motion.div
+            layout
+            className="grid grid-cols-1 gap-5 xl:grid-cols-3"
+            transition={{ type: "spring", stiffness: 200, damping: 24 }}
+          >
+            <AnimatePresence mode="popLayout">
+              {COLUMNS.map((column) => {
+                const columnTasks = groupedTasks[column.key];
+                const isDropTarget = dragOverColumn === column.key;
+
+                return (
+                  <motion.section
+                    layout
+                    key={column.key}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                    className={`rounded-2xl border p-4 transition-colors md:p-5 ${
+                      isDropTarget
+                        ? `${column.accent} ring-2 ring-indigo-400/30`
+                        : "border-slate-200/80 bg-white/70 shadow-sm backdrop-blur"
+                    }`}
+                    onDragOver={(event) => handleDragOver(event, column.key)}
+                    onDragLeave={() => setDragOverColumn(null)}
+                    onDrop={(event) => handleDrop(event, column.key)}
+                  >
+                    <div className="mb-4 flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${column.dot}`} />
+                          <h2 className="text-base font-bold text-slate-900">{column.title}</h2>
+                        </div>
+                        <p className="mt-0.5 text-xs text-slate-500">{column.subtitle}</p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${column.badge}`}
+                      >
+                        {columnTasks.length}
+                      </span>
+                    </div>
+
+                    {column.key === "todo" && (
+                      <div className="mb-4 flex gap-2">
+                        <input
+                          value={newTaskTitle}
+                          onChange={(event) => setNewTaskTitle(event.target.value)}
+                          onKeyDown={handleTitleKeyDown}
+                          placeholder="Add engineering initiative..."
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10"
+                        />
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.96 }}
+                          onClick={onCreateTask}
+                          className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 transition hover:bg-indigo-500"
+                        >
+                          Add
+                        </motion.button>
+                      </div>
+                    )}
+
+                    <motion.ul layout className="min-h-[120px] space-y-3">
+                      <AnimatePresence mode="popLayout">
+                        {columnTasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            isDragging={draggingId === task.id}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            onDelete={deleteTask}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </motion.ul>
+
+                    {columnTasks.length === 0 && (
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="pointer-events-none py-8 text-center text-xs text-slate-400"
+                      >
+                        Drop tasks here to update status
+                      </motion.p>
+                    )}
+                  </motion.section>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        </main>
       </div>
     </div>
   );
